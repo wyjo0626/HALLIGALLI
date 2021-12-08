@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public struct CardInfo {
     public CardKind kind;
@@ -156,9 +157,10 @@ public class GameManager : MonoBehaviourPunCallbacks
     private IEnumerator TimerStart() {
         Player player = Players[turn].GetComponent<Player>();
         player.AddPlayerCard();
-        PlayedCards.Push(player.CurCard);
-
+        
         yield return new WaitForSeconds(0.15f);
+
+        PlayedCards.Push(player.CurCard);
 
         for (int i = 0; i < 5; i++) {
             State.text = 5 - i + "";
@@ -201,17 +203,17 @@ public class GameManager : MonoBehaviourPunCallbacks
             Player player = Players[i].GetComponent<Player>();
             if (player.CurCard == null) continue;
             CardInfo info = player.CurCard.GetComponent<Card>().info;
-            if (dict.ContainsKey(info.kind)) {
-                dict[info.kind] += info.num;
+            if (dict.ContainsKey(info.kind)) {  // 현재 과일 개수는 인덱스에 맞추기 위해 0부터 시작하니 1 더함
+                dict[info.kind] += info.num + 1;
             } else {
-                dict.Add(info.kind, info.num);
+                dict.Add(info.kind, info.num + 1);
             }
         }
 
         bool isCorrect = false;
 
         foreach(int x in dict.Values) {
-            if (x == 4) isCorrect = true;
+            if (x == 5) isCorrect = true;
         }
 
         if (isCorrect) {
@@ -231,6 +233,13 @@ public class GameManager : MonoBehaviourPunCallbacks
             print("틀림");
         }
         
+    }
+
+    /// <summary>
+    /// 임시 메소드 - 테스트를 위한 현재 씬 재로드
+    /// </summary>
+    public void SceneReload() {
+        SceneManager.LoadScene("03_Online_HG", LoadSceneMode.Single);
     }
 
     #endregion
