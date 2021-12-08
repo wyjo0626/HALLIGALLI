@@ -194,17 +194,28 @@ public class Card : MonoBehaviourPun
     }
 
     public void MoveToPlayer(int player) {
-        currentCoroutine = StartCoroutine(MoveToPlayerPos(player, 0.15f, () => {
-            
-        }));
+        currentCoroutine = StartCoroutine(MoveToPlayerPos(player, 0.15f, () => { }));
     }
 
     // 카드를 특정 플레이어 위치로 이동
     public IEnumerator MoveToPlayerPos(int player, float duration, System.Action onFinish) {
         int steps = (int)(duration / 0.0125f);
 
-        
+        Vector3 P_Pos = CardProperty.Instance.InitPos[player];
+        Vector3 P_Ang = CardProperty.Instance.InitAngle[player];
 
-        yield return new WaitForSeconds(0.0125f);
+        Vector3 displacement = (P_Pos - transform.localPosition) / steps;
+        Vector3 rotation = (P_Ang - transform.localEulerAngles) / steps;
+
+        for(int i = 0; i < steps; i++) {
+            transform.localPosition += displacement;
+            transform.localEulerAngles += rotation;
+
+            yield return new WaitForSeconds(0.0125f);
+        }
+
+        if (onFinish != null)
+            onFinish();
+
     }
 }

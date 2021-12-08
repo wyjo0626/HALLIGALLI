@@ -156,6 +156,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     private IEnumerator TimerStart() {
         Player player = Players[turn].GetComponent<Player>();
         player.AddPlayerCard();
+        PlayedCards.Push(player.CurCard);
 
         yield return new WaitForSeconds(0.15f);
 
@@ -197,7 +198,9 @@ public class GameManager : MonoBehaviourPunCallbacks
         // 각 플레이어들의 현재 카드 정보를 가져와 더하면서 저장
         Dictionary<CardKind, int> dict = new Dictionary<CardKind, int>();
         for(int i = 0; i < Players.Count; i++) {
-            CardInfo info = Players[i].GetComponent<Player>().CurCard.GetComponent<Card>().info;
+            Player player = Players[i].GetComponent<Player>();
+            if (player.CurCard == null) continue;
+            CardInfo info = player.CurCard.GetComponent<Card>().info;
             if (dict.ContainsKey(info.kind)) {
                 dict[info.kind] += info.num;
             } else {
@@ -208,7 +211,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         bool isCorrect = false;
 
         foreach(int x in dict.Values) {
-            if (x == 5) isCorrect = true;
+            if (x == 4) isCorrect = true;
         }
 
         if (isCorrect) {
@@ -216,8 +219,16 @@ public class GameManager : MonoBehaviourPunCallbacks
             while(PlayedCards.Count > 0) {
                 PlayedCards.Pop().GetComponent<Card>().MoveToPlayer(player);
             }
+            print("맞음");
         } else {
-            // 총 개수가 5개인 종류가 없다면
+            for(int i = 0; i < Players.Count; i++) {
+                Player player = Players[i].GetComponent<Player>();
+                if (player.CurCard == null) continue;
+                if (player.order != this.player)
+                    player.CurCard.GetComponent<Card>().MoveToPlayer(i);
+            }
+
+            print("틀림");
         }
         
     }
