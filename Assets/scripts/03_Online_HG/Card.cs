@@ -7,6 +7,8 @@ using Photon.Pun;
 
 public class Card : MonoBehaviourPun
 {
+    #region Field
+
     public bool interactable = false;    // 상호작용 여부
     public bool pageDragging = false;  // 드래깅 여부
 
@@ -29,7 +31,9 @@ public class Card : MonoBehaviourPun
     Vector3 bottom;
     Vector3 f;      // 팔로잉 포인트
 
-    UnityEvent OnFlip;
+    #endregion
+
+    #region MonoBehaviour
 
     private void Awake() {
         Canvas = GameManager.Instance.Canvas;
@@ -41,6 +45,15 @@ public class Card : MonoBehaviourPun
         CalcCurlCriticalPoints();
     }
 
+    void Update() {
+        if (pageDragging && interactable) {
+            UpdateCard();
+        }
+    }
+
+    #endregion
+
+    #region Methods
 
     public void CalcCurlCriticalPoints() {
         width = CardPanel.rect.width;
@@ -50,13 +63,7 @@ public class Card : MonoBehaviourPun
         bottom = new Vector3(0, -half, 0);
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        if (pageDragging && interactable) {
-            UpdateCard();
-        }
-    }
+
 
     // 마우스 포인트로 카드 넘기기
     public void UpdateCard() {
@@ -124,12 +131,17 @@ public class Card : MonoBehaviourPun
         }
     }
 
+    #endregion
+
+    #region Coroutines
+
     Coroutine currentCoroutine;
     
     // 드래그를 반틈 넘어서 땠을 때 자동으로 뒤로 넘기기
     public void FlipForward() {
         currentCoroutine = StartCoroutine(TweenTo(bottom, 0.15f, () => {
             pageDragging = false;
+            interactable = false;
         }));
     }
     
@@ -145,10 +157,6 @@ public class Card : MonoBehaviourPun
         currentCoroutine = StartCoroutine(TweenTo(top, 0.15f, () => {
             pageDragging = false;
         }));
-    }
-    public void Flip() {
-        if (OnFlip != null)
-            OnFlip.Invoke();
     }
 
     // 위 또는 아래로 카드를 되돌림
@@ -172,7 +180,6 @@ public class Card : MonoBehaviourPun
         }));
     }
 
-
     // 카드를 옮겨질 장소(카드를 내는 위치)로 움직임
     public IEnumerator MoveTo(float duration, System.Action onFinish) {
         int steps = (int)(duration / 0.0125f);
@@ -193,8 +200,8 @@ public class Card : MonoBehaviourPun
             onFinish();
     }
 
-    public void MoveToPlayer(int player) {
-        currentCoroutine = StartCoroutine(MoveToPlayerPos(player, 0.15f, () => { }));
+    public void MoveToPlayer(int player, System.Action action) {
+        currentCoroutine = StartCoroutine(MoveToPlayerPos(player, 0.25f, action));
     }
 
     // 카드를 특정 플레이어 위치로 이동
@@ -203,6 +210,19 @@ public class Card : MonoBehaviourPun
 
         Vector3 P_Pos = CardProperty.Instance.InitPos[player];
         Vector3 P_Ang = CardProperty.Instance.InitAngle[player];
+
+        float My_Ang = GameManager.Instance.IntRound(transform.localEulerAngles.z, -1);
+
+        float temp = Mathf.Abs(My_Ang + P_Ang.z);
+        bool same_Ang = temp == 300 || temp == 420 || My_Ang == P_Ang.z;
+
+        if (!same_Ang) {
+            if (My_Ang == 240 && My_Ang == 60) {
+                P_Ang = new Vector3(0, 0, My_Ang - 60);
+            } else {
+                P_Ang = new Vector3(0, 0, My_Ang + 60);
+            }
+        }
 
         Vector3 displacement = (P_Pos - transform.localPosition) / steps;
         Vector3 rotation = (P_Ang - transform.localEulerAngles) / steps;
@@ -214,8 +234,12 @@ public class Card : MonoBehaviourPun
             yield return new WaitForSeconds(0.0125f);
         }
 
+        Destroy(gameObject);
+
         if (onFinish != null)
             onFinish();
 
     }
+
+    #endregion
 }

@@ -38,8 +38,8 @@ public class CardProperty
     private Vector3[] initPos = new Vector3[] {
         new Vector3(-495, 246),
         new Vector3(495, 246),
-        new Vector3(-495, -246),
         new Vector3(495, -246),
+        new Vector3(-495, -246),
     };
 
     public Vector3[] InitPos {
@@ -54,8 +54,8 @@ public class CardProperty
     private Vector3[] movedPos = new Vector3[] {
         new Vector3(-195, 125),
         new Vector3(195, 125),
-        new Vector3(-195, -125),
         new Vector3(195, -125),
+        new Vector3(-195, -125),
     };
 
     public Vector3[] MovedPos {
@@ -68,10 +68,10 @@ public class CardProperty
     /// 각 포지션의 각도
     /// </summary>
     private Vector3[] initAngle = new Vector3[] {
-        new Vector3(0, 0, -120),
+        new Vector3(0, 0, 240),
         new Vector3(0, 0, 120),
-        new Vector3(0, 0, -60),
         new Vector3(0, 0, 60),
+        new Vector3(0, 0, 300),
     };
 
     public Vector3[] InitAngle {
@@ -162,6 +162,18 @@ public class CardProperty
         Card cardScript = card.GetComponent<Card>();
         cardScript.MovedPR = movedPos[playerOrd];
         cardScript.info = info;
+    }
+
+    /// <summary>
+    /// Properties 로 카드 초기 위치값 설정
+    /// 카드 과일 정보를 함께 초기화 시킬 필요가 없을 때를 위해 오버로드
+    /// </summary>
+    /// <param name="card"></param>
+    /// <param name="playerOrd"></param>
+    public void InitCard(GameObject card, int playerOrd) {
+        // 카드 위치 및 각도 설정
+        card.transform.localPosition = initPos[playerOrd];
+        card.transform.localEulerAngles = initAngle[playerOrd];
     }
 
     #endregion
