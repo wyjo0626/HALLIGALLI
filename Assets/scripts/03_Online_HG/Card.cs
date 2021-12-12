@@ -11,6 +11,7 @@ public class Card : MonoBehaviourPun
 
     public bool interactable = false;    // 상호작용 여부
     public bool pageDragging = false;  // 드래깅 여부
+    public bool fliped = false;     // 뒤집어진 여부
 
     public CardInfo info;
 
@@ -31,13 +32,16 @@ public class Card : MonoBehaviourPun
     Vector3 bottom;
     Vector3 f;      // 팔로잉 포인트
 
+    private GameManager GM = null;
+
     #endregion
 
     #region MonoBehaviour
 
     private void Awake() {
-        Canvas = GameManager.Instance.Canvas;
-        transform.SetParent(GameManager.Instance.Panel.transform);
+        GM = GameManager.Instance;
+        Canvas = GM.Canvas;
+        transform.SetParent(GM.Panel.transform);
 
         if (!Canvas) Canvas = GetComponentInParent<Canvas>();
         if (!Canvas) Debug.LogError("카드는 캔버스의 자식이어야 합니다.");
@@ -139,15 +143,18 @@ public class Card : MonoBehaviourPun
     
     // 드래그를 반틈 넘어서 땠을 때 자동으로 뒤로 넘기기
     public void FlipForward() {
+        interactable = false;
+
         currentCoroutine = StartCoroutine(TweenTo(bottom, 0.15f, () => {
             pageDragging = false;
-            interactable = false;
+            fliped = true;
         }));
     }
     
     // 강제로 포워드 시키기
     public void FlipForceForward() {
         pageDragging = false;
+
         f = new Vector3(0, BackPage.transform.localPosition.y - half);
         FlipForward();
     }

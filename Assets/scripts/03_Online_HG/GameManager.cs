@@ -46,6 +46,8 @@ public class GameManager : MonoBehaviourPunCallbacks
     [SerializeField]
     private List<GameObject> Players;   // 플레이어
 
+    private List<int> PlayerOrders; // 플레이어 순서
+
     #endregion
 
     #region Objects For Game Playing
@@ -67,9 +69,11 @@ public class GameManager : MonoBehaviourPunCallbacks
     int turn = 0;
     // 임시적으로 현재 조작하는 플레이어
     int player = 0;
+    // 벨 눌렀을 때 코루틴 실행 여부
+    bool bellIsRing = false;
 
     // 타이머 코루틴
-    private Coroutine TimerRoutine;
+    public Coroutine TimerRoutine;
 
     #endregion
 
@@ -101,6 +105,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         // CardInfos 초기화
         CardInfos = new List<CardInfo>();
         PlayedCards = new Stack<GameObject>();
+        PlayerOrders = new List<int>();
 
         // 종류 및 개수로 초기화
         for (int i = 0; i < CardKinds.Length; i++) {
@@ -110,6 +115,10 @@ public class GameManager : MonoBehaviourPunCallbacks
                     CardInfos.Add(card);
                 }
             }
+        }
+
+        for(int i = 0; i < Players.Count; i++) {
+            PlayerOrders.Add(i);
         }
     }
 
@@ -155,29 +164,30 @@ public class GameManager : MonoBehaviourPunCallbacks
     /// </summary>
     /// <returns></returns>
     private IEnumerator TimerStart() {
-        Player player = Players[turn].GetComponent<Player>();
+        Player player = Players[PlayerOrders[turn]].GetComponent<Player>();
         player.AddPlayerCard();
-        
-        yield return new WaitForSeconds(0.15f);
-
         PlayedCards.Push(player.CurCard);
 
-        for (int i = 0; i < 5; i++) {
-            State.text = 5 - i + "";
-
-            yield return new WaitForSeconds(1f);
-        }
+        yield return new WaitForSeconds(0.15f);
 
         Card card = player.CurCard.GetComponent<Card>();
-        card.interactable = false;
-        card.FlipForceForward();
+
+        for (int i = 0; i < 5; i++) {
+            if (!card.fliped) {
+                State.text = 5 - i + "";
+                yield return new WaitForSeconds(1f);
+            } else State.text = "";
+        }
+
+        if(!card.fliped) card.FlipForceForward();
 
         if (player.PlayerCards.Count == 0 && player.WaitingCard == null) {
-            Players.Remove(player.gameObject);
-            if (Players.Count == turn) turn = 0;
+            PlayerOrders.Remove(turn);
+            if (PlayerOrders.Count == turn) turn = 0;
         } else turn++;
-        if (turn == Players.Count) turn = 0;
-        print(turn);
+
+        if (turn == PlayerOrders.Count) turn = 0;
+        
         TimerRoutine = StartCoroutine("TimerStart");
     }
 
@@ -187,7 +197,9 @@ public class GameManager : MonoBehaviourPunCallbacks
     private Coroutine Bell;
 
     public void OnClickBell() {
-        Bell = StartCoroutine(RingBell());
+        Player player = Players[this.player].GetComponent<Player>();
+        if (!bellIsRing && (player.PlayerCards.Count + (player.WaitingCard == null ? 0 : 1)) != 0) 
+            Bell = StartCoroutine(RingBell());
     }
 
     /// <summary>
@@ -200,13 +212,14 @@ public class GameManager : MonoBehaviourPunCallbacks
     /// 5. 다시 진행
     /// </summary>
     private IEnumerator RingBell() {
+        bellIsRing = true;
+
         // TimerRoutine 을 멈춤
         StopCoroutine(TimerRoutine);
         State.text = player + 1 + " 플레이어가 종을 침";
 
         // 현재 턴 플레이어의 카드를 강제로 뒤집음
-        Card card = Players[turn].GetComponent<Player>().CurCard.GetComponent<Card>();
-        card.interactable = false;
+        Card card = Players[PlayerOrders[turn]].GetComponent<Player>().CurCard.GetComponent<Card>();
         card.FlipForceForward();
 
         yield return new WaitForSeconds(0.15f);
@@ -246,21 +259,38 @@ public class GameManager : MonoBehaviourPunCallbacks
 
             print("맞음");
         } else {
-            Players.ForEach(x => {
-                Player player = x.GetComponent<Player>();
-                if (player.order != this.player) {
-                    print(this.player);
-                    player.Draw = Players[this.player].GetComponent<Player>().Draw;
-                    player.AddTempCard(this.player);
-                }
-            });
-
             Player curPlay = Players[this.player].GetComponent<Player>();
+
+            if(curPlay.PlayerCards.Count > 3) {
+                Players.ForEach(x => {
+                    Player player = x.GetComponent<Player>();
+                    if (player.PlayerCards.Count == 0) {
+                        return;
+                    }
+                    if (player.order != this.player) {
+                        print(this.player);
+                        player.Draw = Players[this.player].GetComponent<Player>().Draw;
+                        player.AddTempCard(this.player);
+                    }
+                });
+            } else {
+                curPlay.AddPlayerCard();
+                PlayedCards.Push(curPlay.CurCard);
+
+                yield return new WaitForSeconds(0.15f);
+                
+                curPlay.CurCard.GetComponent<Card>().FlipForceForward();
+
+                yield return new WaitForSeconds(0.15f);
+                
+            }
+            
+
             if (curPlay.PlayerCards.Count == 0 && curPlay.WaitingCard == null) {
-                Players.Remove(curPlay.gameObject);
-                if (Players.Count - 1 == turn) turn = 0;
+                PlayerOrders.Remove(this.player);
+                if (PlayerOrders.Count - 1 == turn) turn = 0;
             } else turn++;
-            if (turn == Players.Count) turn = 0;
+            if (turn == PlayerOrders.Count) turn = 0;
 
             print(turn);
 
@@ -269,7 +299,9 @@ public class GameManager : MonoBehaviourPunCallbacks
 
             print("틀림");
         }
-        
+
+        bellIsRing = false;
+
     }
 
     #endregion

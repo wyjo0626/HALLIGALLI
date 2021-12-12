@@ -12,6 +12,7 @@ public class Player : MonoBehaviourPunCallbacks
     /// + 각 플레이어가 조종할(뒤집을) 현재 카드와 다음에 조종할 카드 정보
     /// </summary>
 
+    private GameManager GM = null;  // 게임 매니저
 
     /// <summary>
     /// PlayerCards : 플레이어 카드 정보 큐
@@ -35,6 +36,7 @@ public class Player : MonoBehaviourPunCallbacks
 
     void Awake()
     {
+        GM = GameManager.Instance;
         PlayerCards = new Queue<CardInfo>();
     }
 
@@ -59,11 +61,12 @@ public class Player : MonoBehaviourPunCallbacks
     public void AddPlayerCard() {
         if (WaitingCard != null) CurCard = WaitingCard;
         if(PlayerCards.Count != 0) {
-            WaitingCard = Instantiate(GameManager.Instance.Card, Vector3.zero, Quaternion.identity);
+            WaitingCard = Instantiate(GM.Card, Vector3.zero, Quaternion.identity);
             CardProperty.Instance.InitCard(WaitingCard, Draw, order);
             WaitingCard.transform.localScale = Vector3.one;
         } else {
             WaitingCard = null;
+            ChangeState();
         }
         if(CurCard != null) CurCard.GetComponent<Card>().MoveForward();
     }
@@ -73,7 +76,7 @@ public class Player : MonoBehaviourPunCallbacks
     /// 카드 오브젝트를 생성하여 종을 쳐 5개를 틀린 플레이어에게 카드를 주기 위한 메소드
     /// </summary>
     public void AddTempCard(int other) {
-        GameObject temp = Instantiate(GameManager.Instance.Card, Vector3.zero, Quaternion.identity);
+        GameObject temp = Instantiate(GM.Card, Vector3.zero, Quaternion.identity);
         CardProperty.Instance.InitCard(temp, other);
         temp.transform.localScale = Vector3.one;
         temp.GetComponent<Card>().MoveToPlayer(order, null);
