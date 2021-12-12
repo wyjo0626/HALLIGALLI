@@ -59,22 +59,30 @@ public class Player : MonoBehaviourPunCallbacks
     /// WaitingCard 가 있다면 CurCard 교체 후 카드 내기
     /// </summary>
     public void AddPlayerCard() {
+        // 대기 중인 카드가 있다면 현재(카드를 낼) 카드를 대기 카드로 교체
         if (WaitingCard != null) CurCard = WaitingCard;
+
         if(PlayerCards.Count != 0) {
+            // 카드 장수가 여유롭다면 새로운 대기 카드를 꺼내 듬
             WaitingCard = Instantiate(GM.Card, Vector3.zero, Quaternion.identity);
             CardProperty.Instance.InitCard(WaitingCard, Draw, order);
             WaitingCard.transform.localScale = Vector3.one;
         } else {
+            // 아니라면 대기 카드는 Null 로 하고 카드 수 텍스트 변경
             WaitingCard = null;
             ChangeState();
         }
+
+        // 현재(낸 카드) 카드가 있다면 해당 카드를 앞으로 이동
         if(CurCard != null) CurCard.GetComponent<Card>().MoveForward();
     }
 
     /// <summary>
     /// 임시 카드 생성
     /// 카드 오브젝트를 생성하여 종을 쳐 5개를 틀린 플레이어에게 카드를 주기 위한 메소드
+    /// 임시 카드(카드 정보를 새길 필요 없는 임시 카드)를 생성 후 현재 플레이어로 이동
     /// </summary>
+    /// <param name="other">other 는 현재 플레이어에게 카드를 줄 틀린 플레이어</param>
     public void AddTempCard(int other) {
         GameObject temp = Instantiate(GM.Card, Vector3.zero, Quaternion.identity);
         CardProperty.Instance.InitCard(temp, other);

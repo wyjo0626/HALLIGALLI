@@ -181,12 +181,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         if(!card.fliped) card.FlipForceForward();
 
-        if (player.PlayerCards.Count == 0 && player.WaitingCard == null) {
-            PlayerOrders.Remove(turn);
-            if (PlayerOrders.Count == turn) turn = 0;
-        } else turn++;
-
-        if (turn == PlayerOrders.Count) turn = 0;
+        CheckPlayer(turn);
         
         TimerRoutine = StartCoroutine("TimerStart");
     }
@@ -196,10 +191,23 @@ public class GameManager : MonoBehaviourPunCallbacks
     /// </summary>
     private Coroutine Bell;
 
+    /// <summary>
+    /// 종 OnClick 함수
+    /// </summary>
     public void OnClickBell() {
-        Player player = Players[this.player].GetComponent<Player>();
-        if (!bellIsRing && (player.PlayerCards.Count + (player.WaitingCard == null ? 0 : 1)) != 0) 
-            Bell = StartCoroutine(RingBell());
+        // 벨을 누른 플레이어
+        Player RingPlayer = Players[this.player].GetComponent<Player>();
+        // 현재 턴 플레이어
+        Player TurnPlayer = Players[PlayerOrders[turn]].GetComponent<Player>();
+        // 현재 턴 플레이어의 카드
+        Card TurnCard = null;
+        if (TurnPlayer.CurCard != null)
+            TurnCard = TurnPlayer.CurCard.GetComponent<Card>();
+
+        //    벨이 눌러져 계산 중이 아닐때 && 벨 누른 플레이어는 카드 개수가 0보다 많을 때
+        // && 현재 턴 플레이어의 카드가 이동된 상태일 때만 작동
+        if (!bellIsRing && (RingPlayer.PlayerCards.Count + (RingPlayer.WaitingCard == null ? 0 : 1)) != 0
+            && (TurnCard != null && TurnCard.moved)) Bell = StartCoroutine(RingBell());
     }
 
     /// <summary>
@@ -251,10 +259,11 @@ public class GameManager : MonoBehaviourPunCallbacks
                 Card temp = PlayedCards.Pop().GetComponent<Card>();
                 temp.MoveToPlayer(this.player, null);
                 player.Draw = temp.info;
+
                 yield return new WaitForSeconds(0.1f);
             }
 
-            yield return new WaitForSeconds(0.3f);
+            yield return new WaitForSeconds(1f);
             TimerRoutine = StartCoroutine("TimerStart");
 
             print("맞음");
@@ -277,24 +286,20 @@ public class GameManager : MonoBehaviourPunCallbacks
                 curPlay.AddPlayerCard();
                 PlayedCards.Push(curPlay.CurCard);
 
-                yield return new WaitForSeconds(0.15f);
+                yield return new WaitForSeconds(0.3f);
                 
                 curPlay.CurCard.GetComponent<Card>().FlipForceForward();
 
                 yield return new WaitForSeconds(0.15f);
                 
             }
-            
 
-            if (curPlay.PlayerCards.Count == 0 && curPlay.WaitingCard == null) {
-                PlayerOrders.Remove(this.player);
-                if (PlayerOrders.Count - 1 == turn) turn = 0;
-            } else turn++;
-            if (turn == PlayerOrders.Count) turn = 0;
+
+            CheckPlayer(this.player);
 
             print(turn);
 
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(1f);
             TimerRoutine = StartCoroutine("TimerStart");
 
             print("틀림");
@@ -302,6 +307,22 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         bellIsRing = false;
 
+    }
+
+
+    /// <summary>
+    /// 해당하는 플레이어의 카드 수 체크
+    /// 카드가 하나도 없을 시 턴에서 제외시킴
+    /// </summary>
+    /// <param name="player">체크할 플레이어</param>
+    private void CheckPlayer(int player) {
+        Player temp = Players[PlayerOrders[player]].GetComponent<Player>();
+        if (temp.PlayerCards.Count == 0 && temp.WaitingCard == null) {
+            PlayerOrders.Remove(player);
+            if (PlayerOrders.Count - 1 == turn) turn = 0;
+        } else turn++;
+
+        if (turn == PlayerOrders.Count) turn = 0;
     }
 
     #endregion

@@ -16,15 +16,15 @@ public class CardProperty
 
     #region Create Singleton
 
-    private static CardProperty instance;
+    private static CardProperty _instance;
 
     public static CardProperty Instance {
         get {
-            if (instance == null) {
-                instance = new CardProperty();
+            if (_instance == null) {
+                _instance = new CardProperty();
             }
 
-            return instance;
+            return _instance;
         }
     }
 
@@ -35,7 +35,7 @@ public class CardProperty
     /// <summary>
     /// 초기 포지션
     /// </summary>
-    private Vector3[] initPos = new Vector3[] {
+    private Vector3[] _initPos = new Vector3[] {
         new Vector3(-495, 246),
         new Vector3(495, 246),
         new Vector3(495, -246),
@@ -44,14 +44,14 @@ public class CardProperty
 
     public Vector3[] InitPos {
         get {
-            return initPos;
+            return _initPos;
         }
     }
 
     /// <summary>
     /// 옮겨질 포지션
     /// </summary>
-    private Vector3[] movedPos = new Vector3[] {
+    private Vector3[] _movedPos = new Vector3[] {
         new Vector3(-195, 125),
         new Vector3(195, 125),
         new Vector3(195, -125),
@@ -60,14 +60,14 @@ public class CardProperty
 
     public Vector3[] MovedPos {
         get {
-            return movedPos;
+            return _movedPos;
         }
     }
 
     /// <summary>
     /// 각 포지션의 각도
     /// </summary>
-    private Vector3[] initAngle = new Vector3[] {
+    private Vector3[] _initAngle = new Vector3[] {
         new Vector3(0, 0, 240),
         new Vector3(0, 0, 120),
         new Vector3(0, 0, 60),
@@ -76,14 +76,14 @@ public class CardProperty
 
     public Vector3[] InitAngle {
         get {
-            return initAngle;
+            return _initAngle;
         }
     }
 
     /// <summary>
     /// 과일 이미지 로컬 포지션
     /// </summary>
-    private Vector3[] fruitPos = new Vector3[] {
+    private Vector3[] _fruitPos = new Vector3[] {
         new Vector3(-31.25f, 48.75f),
         new Vector3(31.25f, 48.75f),
         new Vector3(0, 0),
@@ -93,14 +93,14 @@ public class CardProperty
 
     public Vector3[] FruitPos {
         get {
-            return fruitPos;
+            return _fruitPos;
         }
     }
 
     /// <summary>
     /// 카드 개수에 따른 위치 인덱스 값
     /// </summary>
-    private int[][] fruitByNum = new int[][] {
+    private int[][] _fruitByNum = new int[][] {
         new int[] { 2 },
         new int[] { 0, 4 },
         new int[] { 0, 2, 4 },
@@ -110,9 +110,42 @@ public class CardProperty
 
     public int[][] FruitByNum {
         get {
-            return fruitByNum;
+            return _fruitByNum;
         }
     }
+
+    private float _flipS = 0.15f;
+
+    public float FlipS {
+        get {
+            return _flipS;
+        }
+    }
+
+    private WaitForSeconds _flipWS = new WaitForSeconds(0.15f);
+
+    public WaitForSeconds FlipWS {
+        get {
+            return _flipWS;
+        }
+    }
+
+    private float _stepS = 0.0125f;
+
+    public float StepS {
+        get {
+            return _stepS;
+        }
+    }
+
+    private WaitForSeconds _stepWS = new WaitForSeconds(0.0125f);
+
+    public WaitForSeconds StepWS {
+        get {
+            return _stepWS;
+        }
+    }
+
 
     /// <summary>
     /// 이미지 리소스 
@@ -134,14 +167,14 @@ public class CardProperty
     /// <param name="playerOrd"></param>
     public void InitCard(GameObject card, CardInfo info, int playerOrd) {
         // 카드 위치 및 각도 설정
-        card.transform.localPosition = initPos[playerOrd];
-        card.transform.localEulerAngles = initAngle[playerOrd];
+        card.transform.localPosition = _initPos[playerOrd];
+        card.transform.localEulerAngles = _initAngle[playerOrd];
 
         // 백 페이지에 카드 정보에 따른 이미지 설정하기
         Transform backPage = card.transform.GetChild(0).GetChild(1);
         
-        for(int i = 0; i < fruitByNum[info.num].Length; i++) {
-            Image image = backPage.GetChild(fruitByNum[info.num][i]).GetComponent<Image>();
+        for(int i = 0; i < _fruitByNum[info.num].Length; i++) {
+            Image image = backPage.GetChild(_fruitByNum[info.num][i]).GetComponent<Image>();
 
             switch (info.kind) {
                 case CardKind.BANANA:
@@ -160,7 +193,7 @@ public class CardProperty
         }
 
         Card cardScript = card.GetComponent<Card>();
-        cardScript.MovedPR = movedPos[playerOrd];
+        cardScript.MovedPR = _movedPos[playerOrd];
         cardScript.info = info;
     }
 
@@ -172,8 +205,8 @@ public class CardProperty
     /// <param name="playerOrd"></param>
     public void InitCard(GameObject card, int playerOrd) {
         // 카드 위치 및 각도 설정
-        card.transform.localPosition = initPos[playerOrd];
-        card.transform.localEulerAngles = initAngle[playerOrd];
+        card.transform.localPosition = _initPos[playerOrd];
+        card.transform.localEulerAngles = _initAngle[playerOrd];
     }
 
     #endregion

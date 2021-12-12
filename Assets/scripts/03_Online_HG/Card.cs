@@ -12,6 +12,7 @@ public class Card : MonoBehaviourPun
     public bool interactable = false;    // 상호작용 여부
     public bool pageDragging = false;  // 드래깅 여부
     public bool fliped = false;     // 뒤집어진 여부
+    public bool moved = false;
 
     public CardInfo info;
 
@@ -33,6 +34,7 @@ public class Card : MonoBehaviourPun
     Vector3 f;      // 팔로잉 포인트
 
     private GameManager GM = null;
+    private CardProperty CP = null;
 
     #endregion
 
@@ -40,6 +42,7 @@ public class Card : MonoBehaviourPun
 
     private void Awake() {
         GM = GameManager.Instance;
+        CP = CardProperty.Instance;
         Canvas = GM.Canvas;
         transform.SetParent(GM.Panel.transform);
 
@@ -145,7 +148,7 @@ public class Card : MonoBehaviourPun
     public void FlipForward() {
         interactable = false;
 
-        currentCoroutine = StartCoroutine(TweenTo(bottom, 0.15f, () => {
+        currentCoroutine = StartCoroutine(TweenTo(bottom, CP.FlipS, () => {
             pageDragging = false;
             fliped = true;
         }));
@@ -161,19 +164,19 @@ public class Card : MonoBehaviourPun
 
     // 드래그를 반틈도 안되서 땠을 때 다시 뒤로 넘기기
     public void FlipBack() {
-        currentCoroutine = StartCoroutine(TweenTo(top, 0.15f, () => {
+        currentCoroutine = StartCoroutine(TweenTo(top, CP.FlipS, () => {
             pageDragging = false;
         }));
     }
 
     // 위 또는 아래로 카드를 되돌림
     public IEnumerator TweenTo(Vector3 to, float duration, System.Action onFinish) {
-        int steps = (int)(duration / 0.0125f);
+        int steps = (int)(duration / CP.StepS);
         Vector3 displacement = (to - f) / steps;
         for(int i = 0; i < steps; i++) {
             UpdateCardToPoint(f + displacement);
 
-            yield return new WaitForSeconds(0.0125f);
+            yield return CP.StepWS;
         }
 
         if (onFinish != null)
@@ -184,12 +187,13 @@ public class Card : MonoBehaviourPun
     public void MoveForward() {
         currentCoroutine = StartCoroutine(MoveTo(0.15f, () => {
             interactable = true;
+            moved = true;
         }));
     }
 
     // 카드를 옮겨질 장소(카드를 내는 위치)로 움직임
     public IEnumerator MoveTo(float duration, System.Action onFinish) {
-        int steps = (int)(duration / 0.0125f);
+        int steps = (int)(duration / CP.StepS);
 
         float randomAngle = Random.Range(-5f, 5f);
         float angleSteps = randomAngle / steps;
@@ -200,7 +204,7 @@ public class Card : MonoBehaviourPun
             transform.localPosition += displacement;
             transform.localRotation = transform.localRotation * Quaternion.Euler(new Vector3(0, 0, angleSteps));
 
-            yield return new WaitForSeconds(0.0125f);
+            yield return CP.StepWS;
         }
 
         if (onFinish != null)
@@ -213,10 +217,10 @@ public class Card : MonoBehaviourPun
 
     // 카드를 특정 플레이어 위치로 이동
     public IEnumerator MoveToPlayerPos(int player, float duration, System.Action onFinish) {
-        int steps = (int)(duration / 0.0125f);
+        int steps = (int)(duration / CP.StepS);
 
-        Vector3 P_Pos = CardProperty.Instance.InitPos[player];
-        Vector3 P_Ang = CardProperty.Instance.InitAngle[player];
+        Vector3 P_Pos = CP.InitPos[player];
+        Vector3 P_Ang = CP.InitAngle[player];
 
         float My_Ang = GameManager.Instance.IntRound(transform.localEulerAngles.z, -1);
 
@@ -238,7 +242,7 @@ public class Card : MonoBehaviourPun
             transform.localPosition += displacement;
             transform.localEulerAngles += rotation;
 
-            yield return new WaitForSeconds(0.0125f);
+            yield return CP.StepWS;
         }
 
         Destroy(gameObject);
